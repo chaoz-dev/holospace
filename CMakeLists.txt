@@ -5,9 +5,9 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-find_package(freenect2 REQUIRED)
-
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
+
+find_package(freenect2 REQUIRED)
 
 set(GCC_COMPILE_FLAGS
     "-Wall                  \
