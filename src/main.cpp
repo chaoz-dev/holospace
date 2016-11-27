@@ -128,33 +128,32 @@ int main(void)
 
             for (size_t j = 0; j < cloud_ptr->width; ++j)
             {
-                size_t offset = height + j;
+                size_t offset { height + j };
 
                 float depth { ((float) undistorted.data[offset]) / 1000.0f };
-                pcl::PointXYZRGB pt { cloud_ptr->points.at(offset) };
+                pcl::PointXYZRGB * pt { &cloud_ptr->points.at(offset) };
 
                 if (!std::isnan(depth) && !(std::abs(depth) < 0.0001))
                 {
                     unsigned char * rgb { registered.data + offset + 4 };
-                    pt.x = col_map(j) * depth;
-                    pt.y = row_map(i) * depth;
-                    pt.z = depth;
+                    pt->x = col_map(j) * depth;
+                    pt->y = row_map(i) * depth;
+                    pt->z = depth;
 
-                    pt.r = rgb[2];
-                    pt.g = rgb[1];
-                    pt.b = rgb[0];
+                    pt->r = rgb[2];
+                    pt->g = rgb[1];
+                    pt->b = rgb[0];
 
                     cloud_ptr->is_dense = true;
                 } else
                 {
-                    pt.x = pt.y = pt.z =
+                    pt->x = pt->y = pt->z =
                             std::numeric_limits<float>::quiet_NaN();
-                    pt.rgb = std::numeric_limits<float>::quiet_NaN();
+                    pt->rgb = std::numeric_limits<float>::quiet_NaN();
                     cloud_ptr->is_dense = false;
                 }
             }
         }
-
         visualizer.showCloud(cloud_ptr);
 
         /* Release frames when finished */
@@ -166,7 +165,9 @@ int main(void)
                 (end - start)).count() / 1000000.0 };
 
         printf("Elapsed time: %.3f\n", duration);
+
     }
+
 
     device->stop();
     device->close();
