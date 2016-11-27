@@ -8,7 +8,8 @@ endif()
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 
 find_package(freenect2 REQUIRED)
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL 1.7 REQUIRED COMPONENTS io common visualization)
+find_package(VTK REQUIRED)
 
 set(GCC_COMPILE_FLAGS
     "-Wall                  \
@@ -45,14 +46,16 @@ set(CMAKE_EXE_LINKER_FLAGS_RELEASE
 set(CMAKE_INSTALL_PREFIX
     "${CMAKE_HOME_DIRECTORY}/bin")
 
-set(INCLUDE_DIR
-    "/usr/local/include")
-set(LIB_DIR
-    "/usr/local/lib")
-
-include_directories(${INCLUDE_DIR}
+include_directories(
+    "/usr/include"
+    "/usr/local/include"
+    "${PCL_INCLUDE_DIRS}"
     "${CMAKE_HOME_DIRECTORY}/include")
 
-link_directories(${LIB_DIR})
+link_directories(
+    "/usr/lib"
+    "/usr/local/lib"
+    "${PCL_LIBRARY_DIRS}")
+
 
 add_subdirectory(src)
