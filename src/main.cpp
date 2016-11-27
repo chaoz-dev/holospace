@@ -12,17 +12,19 @@
 #include <string>
 #include <vector>
 
+#include <eigen3/Eigen/Core>
+
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 #include <libfreenect2/logger.h>
 
+#include <opencv2/opencv.hpp>
+
 #include <pcl-1.7/pcl/point_cloud.h>
 #include <pcl-1.7/pcl/point_types.h>
 #include <pcl-1.7/pcl/visualization/cloud_viewer.h>
-
-#include <eigen3/Eigen/Core>
 
 static bool keep_running = true;
 void sigint_handler(int s)
@@ -122,34 +124,42 @@ int main(void)
                 pcl::PointXYZRGB>((uint32_t) undistorted.width,
                 (uint32_t) undistorted.height) };
 
-        for (size_t i = 0; i < cloud_ptr->height; ++i)
+        cv::Mat depth_mat { (int) FRAME_HEIGHT, (int) FRAME_WIDTH,
+        CV_8UC4, undistorted.data };
+        cv::Mat rgb_mat { (int) FRAME_HEIGHT, (int) FRAME_WIDTH,
+        CV_8UC4, registered.data };
+
+        for (std::size_t y = 0; y < cloud_ptr->height; ++y)
         {
-            size_t height { i * cloud_ptr->width };
+            std::size_t row { y * cloud_ptr->width };
 
-            for (size_t j = 0; j < cloud_ptr->width; ++j)
+            float * depth_ptr { ((float *) depth_mat.ptr()) + row };
+            char * rgb_ptr { ((char *) rgb_mat.ptr()) + (row << 2) };
+
+            for (std::size_t x = 0; x < cloud_ptr->width; ++x)
             {
-                size_t offset { height + j };
+                pcl::PointXYZRGB * pt_ptr { &cloud_ptr->points.at(row + x) };
 
-                float depth { ((float) undistorted.data[offset]) / 1000.0f };
-                pcl::PointXYZRGB * pt { &cloud_ptr->points.at(offset) };
+                float depth_value { *(depth_ptr + x) / 1000.0f };
 
-                if (!std::isnan(depth) && !(std::abs(depth) < 0.0001))
+                if (!std::isnan(depth_value)
+                        && !(std::abs(depth_value) < 0.0001))
                 {
-                    unsigned char * rgb { registered.data + offset + 4 };
-                    pt->x = col_map(j) * depth;
-                    pt->y = row_map(i) * depth;
-                    pt->z = depth;
+                    pt_ptr->x = col_map(x) * depth_value;
+                    pt_ptr->y = row_map(y) * depth_value;
+                    pt_ptr->z = depth_value;
 
-                    pt->r = rgb[2];
-                    pt->g = rgb[1];
-                    pt->b = rgb[0];
+                    char * rgb { rgb_ptr + (x << 2) };
+                    pt_ptr->r = rgb[2];
+                    pt_ptr->g = rgb[1];
+                    pt_ptr->b = rgb[0];
 
                     cloud_ptr->is_dense = true;
                 } else
                 {
-                    pt->x = pt->y = pt->z =
+                    pt_ptr->x = pt_ptr->y = pt_ptr->z =
                             std::numeric_limits<float>::quiet_NaN();
-                    pt->rgb = std::numeric_limits<float>::quiet_NaN();
+                    pt_ptr->rgb = std::numeric_limits<float>::quiet_NaN();
                     cloud_ptr->is_dense = false;
                 }
             }
@@ -167,7 +177,6 @@ int main(void)
         printf("Elapsed time: %.3f\n", duration);
 
     }
-
 
     device->stop();
     device->close();

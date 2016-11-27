@@ -8,6 +8,7 @@ endif()
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 
 find_package(freenect2 REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(PCL 1.7 REQUIRED COMPONENTS io common visualization)
 find_package(VTK REQUIRED)
 
