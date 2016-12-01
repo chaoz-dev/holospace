@@ -1,6 +1,6 @@
 add_executable(${PROJECT_NAME} main.cpp)
 
-#target_sources(${PROJECT_NAME} PRIVATE)
+target_sources(${PROJECT_NAME} PRIVATE devices/kinect2.cpp)
 
 target_link_libraries(${PROJECT_NAME}
                       ${freenect2_LIBRARIES}
