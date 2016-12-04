@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include <pcl-1.7/pcl/visualization/cloud_viewer.h>
+#include <pcl-1.7/pcl/visualization/pcl_visualizer.h>
 
 #include "kinect2.h"
 
@@ -22,7 +22,6 @@ void sigint_handler(int s)
     if(s)
         keep_running = false;
 }
-
 
 int main(void)
 {
@@ -36,23 +35,38 @@ int main(void)
     for(auto itr { device_ptrs.begin() }; itr != device_ptrs.end(); ++itr)
     {
         assert(*itr);
-        (*itr)->start();
+        assert((*itr)->start());
     }
 
-    pcl::visualization::CloudViewer visualizer { "Viewer" };
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr { new pcl::PointCloud<
+            pcl::PointXYZRGB>() };
+
+    std::shared_ptr<pcl::visualization::PCLVisualizer> visualizer {
+            new pcl::visualization::PCLVisualizer("Cloud Visualizer") };
+    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(
+            cloud_ptr);
+    visualizer->addPointCloud(cloud_ptr, rgb, "Cloud_1");
+    visualizer->setPointCloudRenderingProperties(
+            pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "Cloud_1");
+    visualizer->setBackgroundColor(0, 0, 0);
+    visualizer->addCoordinateSystem(1.0);
+    visualizer->initCameraParameters();
 
     while (keep_running)
     {
         std::chrono::high_resolution_clock::time_point start {
                 std::chrono::high_resolution_clock::now() };
 
-        visualizer.showCloud(device_ptrs.at(0)->read_cloud());
+        device_ptrs.at(0)->read_cloud(cloud_ptr);
+        rgb.setInputCloud(cloud_ptr);
+        visualizer->updatePointCloud<pcl::PointXYZRGB>(cloud_ptr, rgb,
+                "Cloud_1");
+        visualizer->spinOnce();
 
         std::chrono::high_resolution_clock::time_point end {
                 std::chrono::high_resolution_clock::now() };
         double duration { std::chrono::duration_cast<std::chrono::microseconds>(
                 (end - start)).count() / 1000000.0 };
-
         printf("Elapsed time: %.3f\n", duration);
 
     }

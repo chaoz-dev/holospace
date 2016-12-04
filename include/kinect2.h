@@ -55,6 +55,10 @@ namespace device
 
             bool start();
             void stop();
+            void read_cloud(
+                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
+                    size_t timeout_sec = 10) const;
+
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr read_cloud(
                     size_t timeout_sec = 10) const;
 
@@ -65,6 +69,8 @@ namespace device
                     static constexpr size_t FRAME_HEIGHT { 424 };
                     static constexpr size_t FRAME_WIDTH { 512 };
                     static constexpr size_t BYTES_PER_PIX { 4 };
+                    static constexpr size_t FRAME_AREA { FRAME_HEIGHT
+                            * FRAME_WIDTH };
 
                     float depth_col_map[FRAME_WIDTH] { };
                     float depth_row_map[FRAME_HEIGHT] { };

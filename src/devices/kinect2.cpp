@@ -94,12 +94,37 @@ namespace device
 
     void Kinect2Device::stop()
     {
-        assert(device_ptr);
 
-        device_ptr->stop();
-        device_ptr->close();
+        if(device_ptr)
+        {
+            device_ptr->stop();
+            device_ptr->close();
+        }
 
         registration_ptr.reset(nullptr);
+    }
+
+    void Kinect2Device::read_cloud(
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
+            size_t timeout_sec) const
+    {
+        if(!out_cloud_ptr)
+            out_cloud_ptr = pcl::PointCloud<pcl::PointXYZRGB>(
+                    Kinect2FrameParam::FRAME_WIDTH,
+                    Kinect2FrameParam::FRAME_HEIGHT).makeShared();
+        else if(out_cloud_ptr->size() != Kinect2FrameParam::FRAME_AREA)
+        {
+            out_cloud_ptr->resize(Kinect2FrameParam::FRAME_AREA);
+            out_cloud_ptr->width = Kinect2FrameParam::FRAME_WIDTH;
+            out_cloud_ptr->height = Kinect2FrameParam::FRAME_HEIGHT;
+        }
+
+        out_cloud_ptr->is_dense = false;
+
+        Kinect2Frame frame { *frame_listener_ptr };
+
+        if(read_frame(frame, timeout_sec))
+            frame_to_cloud(frame, out_cloud_ptr);
     }
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect2Device::read_cloud(
@@ -110,10 +135,7 @@ namespace device
                 Kinect2FrameParam::FRAME_HEIGHT) };
         cloud_ptr->is_dense = false;
 
-        Kinect2Frame frame { *frame_listener_ptr };
-
-        if(read_frame(frame, timeout_sec))
-            frame_to_cloud(frame, cloud_ptr);
+        read_cloud(cloud_ptr, timeout_sec);
 
         return cloud_ptr;
     }
@@ -188,6 +210,7 @@ namespace device
                     pt_ptr->x = pt_ptr->y = pt_ptr->z = std::numeric_limits<
                             float>::quiet_NaN();
                     pt_ptr->rgb = std::numeric_limits<float>::quiet_NaN();
+
                     cloud_ptr->is_dense = false;
                 }
             }
