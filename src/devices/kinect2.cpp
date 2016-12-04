@@ -119,8 +119,6 @@ namespace device
             out_cloud_ptr->height = Kinect2FrameParam::FRAME_HEIGHT;
         }
 
-        out_cloud_ptr->is_dense = false;
-
         Kinect2Frame frame { *frame_listener_ptr };
 
         if(read_frame(frame, timeout_sec))
@@ -133,7 +131,6 @@ namespace device
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr { new pcl::PointCloud<
                 pcl::PointXYZRGB>(Kinect2FrameParam::FRAME_WIDTH,
                 Kinect2FrameParam::FRAME_HEIGHT) };
-        cloud_ptr->is_dense = false;
 
         read_cloud(cloud_ptr, timeout_sec);
 
@@ -177,6 +174,7 @@ namespace device
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr) const
     {
         assert(cloud_ptr);
+        cloud_ptr->is_dense = false;
 
         for(std::size_t y { 0 }; y < cloud_ptr->height; ++y)
         {
@@ -202,16 +200,12 @@ namespace device
                     pt_ptr->r = rgb[2];
                     pt_ptr->g = rgb[1];
                     pt_ptr->b = rgb[0];
-
-                    cloud_ptr->is_dense = true;
                 }
                 else
                 {
                     pt_ptr->x = pt_ptr->y = pt_ptr->z = std::numeric_limits<
                             float>::quiet_NaN();
                     pt_ptr->rgb = std::numeric_limits<float>::quiet_NaN();
-
-                    cloud_ptr->is_dense = false;
                 }
             }
         }
