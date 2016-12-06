@@ -28,9 +28,17 @@ int main(void)
     signal(SIGINT, sigint_handler);
 
     device::Kinect2DeviceFactory k2_factory { };
+
+    std::shared_ptr<pcl::visualization::PCLVisualizer> visualizer {
+            new pcl::visualization::PCLVisualizer("Cloud Visualizer") };
+    visualizer->setBackgroundColor(0, 0, 0);
+    visualizer->addCoordinateSystem(1.0);
+    visualizer->initCameraParameters();
+
     std::vector<std::unique_ptr<device::Kinect2Device>> device_ptrs {
             k2_factory.create_devices() };
     assert(device_ptrs.size() > 0);
+    printf("Detected %lu devices...\n", device_ptrs.size());
 
     for(auto itr { device_ptrs.begin() }; itr != device_ptrs.end(); ++itr)
     {
@@ -40,17 +48,11 @@ int main(void)
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr { new pcl::PointCloud<
             pcl::PointXYZRGB>() };
-
-    std::shared_ptr<pcl::visualization::PCLVisualizer> visualizer {
-            new pcl::visualization::PCLVisualizer("Cloud Visualizer") };
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(
             cloud_ptr);
     visualizer->addPointCloud(cloud_ptr, rgb, "Cloud_1");
     visualizer->setPointCloudRenderingProperties(
             pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "Cloud_1");
-    visualizer->setBackgroundColor(0, 0, 0);
-    visualizer->addCoordinateSystem(1.0);
-    visualizer->initCameraParameters();
 
     while (keep_running)
     {
