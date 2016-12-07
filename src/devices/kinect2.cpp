@@ -33,15 +33,9 @@ namespace device
 
         for(size_t i { 0 }; i < num_devices; ++i)
         {
-            std::string serial_num { freenect2_ptr->getDeviceSerialNumber(i) };
-
-            std::unique_ptr<libfreenect2::Freenect2Device> device {
-                    freenect2_ptr->openDevice(serial_num,
-                            new libfreenect2::CpuPacketPipeline()) };
-
             kinect2_devices.push_back(
                     std::unique_ptr<Kinect2Device>(
-                            new Kinect2Device(std::move(device))));
+                            new Kinect2Device(freenect2_ptr, i)));
 
         }
 
@@ -50,11 +44,18 @@ namespace device
     }
 
     Kinect2Device::Kinect2Device(
-            std::unique_ptr<libfreenect2::Freenect2Device> device_ptr,
-            int cam_type) :
-            device_ptr(std::move(device_ptr))
+            std::shared_ptr<libfreenect2::Freenect2> freenect2_ptr,
+            size_t cam_num, int cam_type) :
+            freenect2_ptr(freenect2_ptr)
     {
-        assert(this->device_ptr);
+        assert(this->freenect2_ptr);
+
+        std::string serial_num { freenect2_ptr->getDeviceSerialNumber(cam_num) };
+        device_ptr = std::unique_ptr<libfreenect2::Freenect2Device> {
+                freenect2_ptr->openDevice(serial_num,
+                new libfreenect2::CpuPacketPipeline()) };
+
+        assert(device_ptr);
         set_frame_listener(cam_type);
     }
 
@@ -85,9 +86,12 @@ namespace device
                     new libfreenect2::Registration(
                             device_ptr->getIrCameraParams(),
                             device_ptr->getColorCameraParams()));
+        assert(registration_ptr);
 
-        frame_params = std::unique_ptr<Kinect2FrameParam>(
-                new Kinect2FrameParam(device_ptr->getIrCameraParams()));
+        if(!frame_params_ptr)
+            frame_params_ptr = std::unique_ptr<Kinect2FrameParam>(
+                    new Kinect2FrameParam(device_ptr->getIrCameraParams()));
+        assert(frame_params_ptr);
 
         return true;
     }
@@ -102,12 +106,15 @@ namespace device
         }
 
         registration_ptr.reset(nullptr);
+        frame_params_ptr.reset(nullptr);
     }
 
     void Kinect2Device::read_cloud(
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
             size_t timeout_sec) const
     {
+        assert(frame_listener_ptr);
+
         if(!out_cloud_ptr)
             out_cloud_ptr = pcl::PointCloud<pcl::PointXYZRGB>(
                     Kinect2FrameParam::FRAME_WIDTH,
@@ -131,6 +138,7 @@ namespace device
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr { new pcl::PointCloud<
                 pcl::PointXYZRGB>(Kinect2FrameParam::FRAME_WIDTH,
                 Kinect2FrameParam::FRAME_HEIGHT) };
+        assert(cloud_ptr);
 
         read_cloud(cloud_ptr, timeout_sec);
 
@@ -166,6 +174,8 @@ namespace device
         frame_listener_ptr = std::unique_ptr<
                 libfreenect2::SyncMultiFrameListener>(
                 new libfreenect2::SyncMultiFrameListener(frame_type));
+        assert(frame_listener_ptr);
+
         device_ptr->setColorFrameListener(frame_listener_ptr.get());
         device_ptr->setIrAndDepthFrameListener(frame_listener_ptr.get());
     }
@@ -192,8 +202,10 @@ namespace device
                 if(!std::isnan(depth_value)
                         && !(std::abs(depth_value) < 0.0001))
                 {
-                    pt_ptr->x = frame_params->depth_col_map[x] * depth_value;
-                    pt_ptr->y = frame_params->depth_row_map[y] * depth_value;
+                    pt_ptr->x = frame_params_ptr->depth_col_map[x]
+                            * depth_value;
+                    pt_ptr->y = frame_params_ptr->depth_row_map[y]
+                            * depth_value;
                     pt_ptr->z = depth_value;
 
                     char * rgb { rgb_ptr + (x << 2) };

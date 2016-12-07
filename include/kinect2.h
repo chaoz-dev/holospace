@@ -38,14 +38,15 @@ namespace device
             std::vector<std::unique_ptr<Kinect2Device>> create_devices() const;
 
         private:
-            std::unique_ptr<libfreenect2::Freenect2> freenect2_ptr;
+            std::shared_ptr<libfreenect2::Freenect2> freenect2_ptr;
     };
 
     class Kinect2Device
     {
         public:
             Kinect2Device(
-                    std::unique_ptr<libfreenect2::Freenect2Device> device_ptr,
+                    std::shared_ptr<libfreenect2::Freenect2> freenect2_ptr,
+                    size_t cam_num,
                     int cam_type = Kinect2CamType::COLOR
                             | Kinect2CamType::DEPTH);
             virtual ~Kinect2Device();
@@ -117,7 +118,6 @@ namespace device
                             Kinect2FrameParam::FRAME_WIDTH, CV_8UC4,
                             registered_frame.data };
 
-
                     Kinect2Frame(
                             libfreenect2::SyncMultiFrameListener & listener) :
                             frame_listener(listener)
@@ -145,11 +145,15 @@ namespace device
 
             static constexpr size_t MILLISEC_MULT { 1000 };
 
+            // Need to hold the freenect2 object in memory as long as
+            // a libfreenect2::Freenect2Device object exists.
+            std::shared_ptr<libfreenect2::Freenect2> freenect2_ptr { };
+
             std::unique_ptr<libfreenect2::Freenect2Device> device_ptr { };
             std::unique_ptr<libfreenect2::SyncMultiFrameListener> frame_listener_ptr { };
 
             std::unique_ptr<libfreenect2::Registration> registration_ptr { };
-            std::unique_ptr<Kinect2FrameParam> frame_params { };
+            std::unique_ptr<Kinect2FrameParam> frame_params_ptr { };
 
             void set_frame_listener(int cam_type);
             bool read_frame(Kinect2Frame & data, size_t timeout_sec = 10) const;
