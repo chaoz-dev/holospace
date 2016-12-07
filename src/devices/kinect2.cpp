@@ -7,6 +7,8 @@
 
 #include "kinect2.h"
 
+#include <chrono>
+
 #include <libfreenect2/packet_pipeline.h>
 
 namespace device
@@ -27,7 +29,8 @@ namespace device
 
         std::vector<std::unique_ptr<Kinect2Device>> kinect2_devices { };
 
-        size_t num_devices { (size_t) freenect2_ptr->enumerateDevices() };
+        size_t num_devices {
+                static_cast<size_t>(freenect2_ptr->enumerateDevices()) };
         if(num_devices == 0)
             return kinect2_devices;
 
@@ -45,16 +48,31 @@ namespace device
 
     Kinect2Device::Kinect2Device(
             std::shared_ptr<libfreenect2::Freenect2> freenect2_ptr,
-            size_t cam_num, int cam_type) :
+            size_t cam_num, int cam_type, size_t timeout_sec) :
             freenect2_ptr(freenect2_ptr)
     {
         assert(this->freenect2_ptr);
 
         std::string serial_num { freenect2_ptr->getDeviceSerialNumber(cam_num) };
-        device_ptr = std::unique_ptr<libfreenect2::Freenect2Device> {
-                freenect2_ptr->openDevice(serial_num,
-                new libfreenect2::CpuPacketPipeline()) };
 
+        std::chrono::high_resolution_clock::time_point start {
+                std::chrono::high_resolution_clock::now() };
+
+        while (!device_ptr)
+        {
+            device_ptr = std::unique_ptr<libfreenect2::Freenect2Device> {
+                    freenect2_ptr->openDevice(serial_num,
+                            new libfreenect2::CpuPacketPipeline()) };
+
+            std::chrono::high_resolution_clock::time_point end {
+                    std::chrono::high_resolution_clock::now() };
+            long int duration {
+                    std::chrono::duration_cast<std::chrono::seconds>(
+                            (end - start)).count() };
+
+            if(static_cast<size_t>(duration) > timeout_sec)
+                break;
+        }
         assert(device_ptr);
         set_frame_listener(cam_type);
     }
@@ -190,8 +208,12 @@ namespace device
         {
             std::size_t row { y * cloud_ptr->width };
 
-            float * depth_ptr { ((float *) frame.depth_mat.ptr()) + row };
-            char * rgb_ptr { ((char *) frame.rgb_mat.ptr()) + (row << 2) };
+            const float * depth_ptr {
+                    reinterpret_cast<const float *>(frame.depth_mat.ptr())
+                    + row };
+            const char * rgb_ptr {
+                    reinterpret_cast<const char *>(frame.rgb_mat.ptr())
+                    + (row << 2) };
 
             for(std::size_t x { 0 }; x < cloud_ptr->width; ++x)
             {
@@ -208,7 +230,7 @@ namespace device
                             * depth_value;
                     pt_ptr->z = depth_value;
 
-                    char * rgb { rgb_ptr + (x << 2) };
+                    const char * rgb { rgb_ptr + (x << 2) };
                     pt_ptr->r = rgb[2];
                     pt_ptr->g = rgb[1];
                     pt_ptr->b = rgb[0];

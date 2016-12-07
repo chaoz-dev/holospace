@@ -48,7 +48,7 @@ namespace device
                     std::shared_ptr<libfreenect2::Freenect2> freenect2_ptr,
                     size_t cam_num,
                     int cam_type = Kinect2CamType::COLOR
-                            | Kinect2CamType::DEPTH);
+                            | Kinect2CamType::DEPTH, size_t timeout_sec = 10);
             virtual ~Kinect2Device();
 
             std::string get_serial_number() const;
