@@ -13,6 +13,10 @@
 
 namespace device
 {
+    /************************************
+     * Kinect2DeviceFactory Definitions *
+     ************************************/
+
     Kinect2DeviceFactory::Kinect2DeviceFactory() :
             freenect2_ptr(new libfreenect2::Freenect2())
     {
@@ -45,6 +49,10 @@ namespace device
         return kinect2_devices;
 
     }
+
+    /*****************************
+     * Kinect2Device Definitions *
+     *****************************/
 
     Kinect2Device::Kinect2Device(
             std::shared_ptr<libfreenect2::Freenect2> freenect2_ptr,
