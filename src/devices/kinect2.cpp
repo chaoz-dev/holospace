@@ -70,7 +70,7 @@ namespace device
         {
             device_ptr = std::unique_ptr<libfreenect2::Freenect2Device> {
                     freenect2_ptr->openDevice(serial_num,
-                            new libfreenect2::CpuPacketPipeline()) };
+                            new libfreenect2::OpenCLPacketPipeline()) };
 
             std::chrono::high_resolution_clock::time_point end {
                     std::chrono::high_resolution_clock::now() };
@@ -104,8 +104,9 @@ namespace device
     bool Kinect2Device::start()
     {
         assert(device_ptr);
-        if(!device_ptr->start())
-            return false;
+//        if(!device_ptr->start())
+//            return false;
+        while (!device_ptr->start());
 
         if(!registration_ptr)
             registration_ptr = std::unique_ptr<libfreenect2::Registration>(

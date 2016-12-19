@@ -17,8 +17,8 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <pcl-1.7/pcl/point_cloud.h>
-#include <pcl-1.7/pcl/point_types.h>
+#include <pcl-1.8/pcl/point_cloud.h>
+#include <pcl-1.8/pcl/point_types.h>
 
 namespace device
 {

@@ -6,8 +6,10 @@ target_link_libraries(${PROJECT_NAME}
                       ${freenect2_LIBRARIES}
                       ${PCL_COMMON_LIBRARIES}
                       ${PCL_VISUALIZATION_LIBRARIES}
+                      ${PCL_FILTERS_LIBRARIES}
                       ${VTK_LIBRARIES}
-                      ${OpenCV_LIBRARIES})
+                      ${OpenCV_LIBRARIES}
+                      ${OpenCL_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION . CONFIGURATIONS Debug)
 install(TARGETS ${PROJECT_NAME} DESTINATION . CONFIGURATIONS Release)
