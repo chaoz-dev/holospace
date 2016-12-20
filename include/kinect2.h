@@ -8,6 +8,7 @@
 #ifndef KINECT2_H
 #define KINECT2_H
 
+#include <exception>
 #include <memory>
 #include <vector>
 
@@ -54,7 +55,7 @@ namespace device
             std::string get_serial_number() const;
             std::string get_firmware_version() const;
 
-            bool start();
+            bool start(size_t timeout_sec = 10);
             void stop();
             void read_cloud(
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
@@ -93,8 +94,7 @@ namespace device
                     }
 
                     ~Kinect2FrameParam()
-                    {
-                    }
+                    {}
             };
 
             class Kinect2Frame
@@ -121,8 +121,7 @@ namespace device
                     Kinect2Frame(
                             libfreenect2::SyncMultiFrameListener & listener) :
                             frame_listener(listener)
-                    {
-                    }
+                    {}
 
                     ~Kinect2Frame()
                     {
@@ -159,6 +158,14 @@ namespace device
             bool read_frame(Kinect2Frame & data, size_t timeout_sec = 10) const;
             void frame_to_cloud(const Kinect2Frame & frame,
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr) const;
+    };
+
+    class DeviceFailureException: public std::runtime_error
+    {
+        public:
+            DeviceFailureException(const std::string & message) :
+                    runtime_error(message)
+            {}
     };
 
 } /* namespace device */

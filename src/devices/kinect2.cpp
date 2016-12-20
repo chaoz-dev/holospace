@@ -8,6 +8,7 @@
 #include "kinect2.h"
 
 #include <chrono>
+#include <stdexcept>
 
 #include <libfreenect2/packet_pipeline.h>
 
@@ -24,8 +25,7 @@ namespace device
     }
 
     Kinect2DeviceFactory::~Kinect2DeviceFactory()
-    {
-    }
+    {}
 
     std::vector<std::unique_ptr<Kinect2Device>> Kinect2DeviceFactory::create_devices() const
     {
@@ -65,7 +65,6 @@ namespace device
 
         std::chrono::high_resolution_clock::time_point start {
                 std::chrono::high_resolution_clock::now() };
-
         while (!device_ptr)
         {
             device_ptr = std::unique_ptr<libfreenect2::Freenect2Device> {
@@ -79,15 +78,17 @@ namespace device
                             (end - start)).count() };
 
             if(static_cast<size_t>(duration) > timeout_sec)
-                break;
+                throw DeviceFailureException(
+                        "Failed to create Kinect2Device object " + serial_num
+                                + " in " + std::to_string(timeout_sec)
+                                + " seconds.");
         }
-        assert(device_ptr);
+
         set_frame_listener(cam_type);
     }
 
     Kinect2Device::~Kinect2Device()
-    {
-    }
+    {}
 
     std::string Kinect2Device::get_serial_number() const
     {
@@ -101,12 +102,26 @@ namespace device
         return device_ptr->getFirmwareVersion();
     }
 
-    bool Kinect2Device::start()
+    bool Kinect2Device::start(size_t timeout_sec)
     {
         assert(device_ptr);
-//        if(!device_ptr->start())
-//            return false;
-        while (!device_ptr->start());
+
+        std::chrono::high_resolution_clock::time_point start {
+                std::chrono::high_resolution_clock::now() };
+        while (!device_ptr->start())
+        {
+            std::chrono::high_resolution_clock::time_point end {
+                    std::chrono::high_resolution_clock::now() };
+            long int duration {
+                    std::chrono::duration_cast<std::chrono::seconds>(
+                            (end - start)).count() };
+
+            if(static_cast<size_t>(duration) > timeout_sec)
+                throw DeviceFailureException(
+                        "Failed to start Kinect2Device object "
+                                + get_serial_number() + " in "
+                                + std::to_string(timeout_sec) + " seconds.");
+        }
 
         if(!registration_ptr)
             registration_ptr = std::unique_ptr<libfreenect2::Registration>(
@@ -146,7 +161,7 @@ namespace device
             out_cloud_ptr = pcl::PointCloud<pcl::PointXYZRGB>(
                     Kinect2FrameParam::FRAME_WIDTH,
                     Kinect2FrameParam::FRAME_HEIGHT).makeShared();
-        else if(out_cloud_ptr->size() != Kinect2FrameParam::FRAME_AREA)
+        else
         {
             out_cloud_ptr->resize(Kinect2FrameParam::FRAME_AREA);
             out_cloud_ptr->width = Kinect2FrameParam::FRAME_WIDTH;
@@ -210,7 +225,9 @@ namespace device
     void Kinect2Device::frame_to_cloud(const Kinect2Frame & frame,
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr) const
     {
-        assert(cloud_ptr);
+        if(!cloud_ptr)
+            return;
+
         cloud_ptr->is_dense = false;
 
         for(std::size_t y { 0 }; y < cloud_ptr->height; ++y)
@@ -218,11 +235,10 @@ namespace device
             std::size_t row { y * cloud_ptr->width };
 
             const float * depth_ptr {
-                    reinterpret_cast<const float *>(frame.depth_mat.ptr())
-                    + row };
+                    reinterpret_cast<const float *>(frame.depth_mat.ptr()) + row };
             const char * rgb_ptr {
                     reinterpret_cast<const char *>(frame.rgb_mat.ptr())
-                    + (row << 2) };
+                            + (row << 2) };
 
             for(std::size_t x { 0 }; x < cloud_ptr->width; ++x)
             {
