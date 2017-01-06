@@ -55,6 +55,11 @@ namespace device
             std::string get_serial_number() const;
             std::string get_firmware_version() const;
 
+            bool started() const
+            {
+                return is_running;
+            }
+
             bool start(size_t timeout_sec = 10);
             void stop();
             void read_cloud(
@@ -153,6 +158,8 @@ namespace device
 
             std::unique_ptr<libfreenect2::Registration> registration_ptr { };
             std::unique_ptr<Kinect2FrameParam> frame_params_ptr { };
+
+            bool is_running { false };
 
             void set_frame_listener(int cam_type);
             bool read_frame(Kinect2Frame & data, size_t timeout_sec = 10) const;

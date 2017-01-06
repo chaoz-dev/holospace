@@ -135,12 +135,12 @@ namespace device
                     new Kinect2FrameParam(device_ptr->getIrCameraParams()));
         assert(frame_params_ptr);
 
-        return true;
+        is_running = true;
+        return started();
     }
 
     void Kinect2Device::stop()
     {
-
         if(device_ptr)
         {
             device_ptr->stop();
@@ -149,6 +149,8 @@ namespace device
 
         registration_ptr.reset(nullptr);
         frame_params_ptr.reset(nullptr);
+
+        is_running = false;
     }
 
     void Kinect2Device::read_cloud(
