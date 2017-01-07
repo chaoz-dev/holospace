@@ -7,6 +7,7 @@ target_link_libraries(${PROJECT_NAME}
                       ${PCL_COMMON_LIBRARIES}
                       ${PCL_VISUALIZATION_LIBRARIES}
                       ${PCL_FILTERS_LIBRARIES}
+                      ${PCL_FEATURES_LIBRARIES}
                       ${VTK_LIBRARIES}
                       ${OpenCV_LIBRARIES}
                       ${OpenCL_LIBRARIES})

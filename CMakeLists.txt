@@ -10,7 +10,8 @@ set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 find_package(OpenCL REQUIRED)
 find_package(freenect2 REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(PCL 1.8 REQUIRED COMPONENTS io common visualization filters)
+find_package(PCL 1.8 REQUIRED COMPONENTS io common visualization filters
+    features)
 find_package(VTK REQUIRED)
 
 set(GCC_COMPILE_FLAGS
