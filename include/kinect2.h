@@ -36,7 +36,7 @@ namespace device
             Kinect2DeviceFactory();
             ~Kinect2DeviceFactory();
 
-            std::vector<std::unique_ptr<Kinect2Device>> create_devices() const;
+            std::vector<std::shared_ptr<Kinect2Device>> create_devices() const;
 
         private:
             std::shared_ptr<libfreenect2::Freenect2> freenect2_ptr;

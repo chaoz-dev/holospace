@@ -27,11 +27,11 @@ namespace device
     Kinect2DeviceFactory::~Kinect2DeviceFactory()
     {}
 
-    std::vector<std::unique_ptr<Kinect2Device>> Kinect2DeviceFactory::create_devices() const
+    std::vector<std::shared_ptr<Kinect2Device>> Kinect2DeviceFactory::create_devices() const
     {
         assert(freenect2_ptr);
 
-        std::vector<std::unique_ptr<Kinect2Device>> kinect2_devices { };
+        std::vector<std::shared_ptr<Kinect2Device>> kinect2_devices { };
 
         size_t num_devices {
                 static_cast<size_t>(freenect2_ptr->enumerateDevices()) };
@@ -41,7 +41,7 @@ namespace device
         for(size_t i { 0 }; i < num_devices; ++i)
         {
             kinect2_devices.push_back(
-                    std::unique_ptr<Kinect2Device>(
+                    std::shared_ptr<Kinect2Device>(
                             new Kinect2Device(freenect2_ptr, i)));
 
         }
