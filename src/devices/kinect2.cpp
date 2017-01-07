@@ -39,12 +39,8 @@ namespace device
             return kinect2_devices;
 
         for(size_t i { 0 }; i < num_devices; ++i)
-        {
             kinect2_devices.push_back(
-                    std::shared_ptr<Kinect2Device>(
-                            new Kinect2Device(freenect2_ptr, i)));
-
-        }
+                    std::make_shared<Kinect2Device>(freenect2_ptr, i));
 
         return kinect2_devices;
 
@@ -84,6 +80,7 @@ namespace device
                                 + " seconds.");
         }
 
+        assert(device_ptr);
         set_frame_listener(cam_type);
     }
 
@@ -124,15 +121,15 @@ namespace device
         }
 
         if(!registration_ptr)
-            registration_ptr = std::unique_ptr<libfreenect2::Registration>(
+            registration_ptr = std::unique_ptr<libfreenect2::Registration> {
                     new libfreenect2::Registration(
                             device_ptr->getIrCameraParams(),
-                            device_ptr->getColorCameraParams()));
+                            device_ptr->getColorCameraParams()) };
         assert(registration_ptr);
 
         if(!frame_params_ptr)
-            frame_params_ptr = std::unique_ptr<Kinect2FrameParam>(
-                    new Kinect2FrameParam(device_ptr->getIrCameraParams()));
+            frame_params_ptr = std::unique_ptr<Kinect2FrameParam> {
+                    new Kinect2FrameParam(device_ptr->getIrCameraParams()) };
         assert(frame_params_ptr);
 
         is_running = true;
