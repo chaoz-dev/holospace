@@ -105,7 +105,8 @@ int main(void)
 //    fpfh.setRadiusSearch(0.05f);
 
     // Visualizer initialization
-    std::vector<int> visualizer_handles { static_cast<int>(num_devices), 0 };
+    std::vector<int> visualizer_handles(static_cast<int>(num_devices), 0);
+    printf("Visualizer Handle Size %zu\n", visualizer_handles.size());
     std::shared_ptr<pcl::visualization::PCLVisualizer> visualizer {
             new pcl::visualization::PCLVisualizer("Cloud Visualizer") };
 
@@ -115,6 +116,7 @@ int main(void)
     for(size_t i { 0 }; i < num_devices; ++i)
     {
 
+        printf("Visualizer Handle %i\n", (int) i);
         int & visualizer_handle { visualizer_handles.at(i) };
 
         visualizer->createViewPort(static_cast<double>(i) / num_devices, 0.0,
