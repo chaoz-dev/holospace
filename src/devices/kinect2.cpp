@@ -155,7 +155,49 @@ namespace device
             size_t timeout_sec) const
     {
         assert(frame_listener_ptr);
+        Kinect2Frame frame { *frame_listener_ptr };
 
+        read_cloud(out_cloud_ptr, frame, timeout_sec);
+    }
+
+    void Kinect2Device::read_cloud(
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
+            cv::Mat & out_rgb_mat, cv::Mat & out_depth_mat,
+            size_t timeout_sec) const
+    {
+        assert(frame_listener_ptr);
+        Kinect2Frame frame { *frame_listener_ptr };
+
+        read_cloud(out_cloud_ptr, frame, timeout_sec);
+
+        if(out_cloud_ptr)
+        {
+            out_rgb_mat = frame.rgb_mat;
+            out_depth_mat = frame.depth_mat;
+        }
+    }
+
+    bool Kinect2Device::read_frame(Kinect2Frame & frame,
+            size_t timeout_sec) const
+    {
+        assert(frame_listener_ptr);
+        assert(registration_ptr);
+
+        if(!frame_listener_ptr->waitForNewFrame(frame.frames,
+                timeout_sec * MILLISEC_MULT))
+            return false;
+
+        registration_ptr->apply(frame.get_rgb_frames(),
+                frame.get_depth_frames(), &frame.undistorted_frame,
+                &frame.registered_frame);
+
+        return true;
+    }
+
+    void Kinect2Device::read_cloud(
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
+            Kinect2Frame & frame, size_t timeout_sec) const
+    {
         if(!out_cloud_ptr)
             out_cloud_ptr = pcl::PointCloud<pcl::PointXYZRGB>(
                     Kinect2FrameParam::FRAME_WIDTH,
@@ -167,39 +209,8 @@ namespace device
             out_cloud_ptr->height = Kinect2FrameParam::FRAME_HEIGHT;
         }
 
-        Kinect2Frame frame { *frame_listener_ptr };
-
         if(read_frame(frame, timeout_sec))
             frame_to_cloud(frame, out_cloud_ptr);
-    }
-
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect2Device::read_cloud(
-            size_t timeout_sec) const
-    {
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr { new pcl::PointCloud<
-                pcl::PointXYZRGB>(Kinect2FrameParam::FRAME_WIDTH,
-                Kinect2FrameParam::FRAME_HEIGHT) };
-        assert(cloud_ptr);
-
-        read_cloud(cloud_ptr, timeout_sec);
-
-        return cloud_ptr;
-    }
-
-    bool Kinect2Device::read_frame(Kinect2Frame & data,
-            size_t timeout_sec) const
-    {
-        assert(frame_listener_ptr);
-        assert(registration_ptr);
-
-        if(!frame_listener_ptr->waitForNewFrame(data.frames,
-                timeout_sec * MILLISEC_MULT))
-            return false;
-
-        registration_ptr->apply(data.get_rgb_frames(), data.get_depth_frames(),
-                &data.undistorted_frame, &data.registered_frame);
-
-        return true;
     }
 
     void Kinect2Device::set_frame_listener(int cam_type)
@@ -268,5 +279,4 @@ namespace device
             }
         }
     }
-
 } /* namespace device */

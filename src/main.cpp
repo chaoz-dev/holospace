@@ -37,7 +37,11 @@ struct PCLCloud
         pcl::PointCloud<pcl::Normal>::Ptr normals_ptr { new pcl::PointCloud<
                 pcl::Normal> };
 
-        std::string name { "PCL Cloud" };
+        cv::Mat rgb_mat { };
+        cv::Mat depth_mat { };
+
+        std::string cloud_name { "PCL Cloud" };
+        std::string img_name { "PCL Image" };
 
 };
 
@@ -77,20 +81,14 @@ int main(void)
         {
             std::shared_ptr<PCLCloud<pcl::PointXYZRGB>> pcl_cloud_ptr {
                     std::make_shared<PCLCloud<pcl::PointXYZRGB>>() };
-            pcl_cloud_ptr->name.append(" " + i);
+            pcl_cloud_ptr->cloud_name.append(" " + i);
+            pcl_cloud_ptr->img_name.append(" " + i);
             pcl_cloud_ptrs.at(i) = pcl_cloud_ptr;
         }
     }
 
-//    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_1_ptr { new pcl::PointCloud<
-//            pcl::PointXYZRGB>() };
-//
-//    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_2_ptr { new pcl::PointCloud<
-//            pcl::PointXYZRGB>() };
 
-    // Pre-processing initialization
-//    pcl::PointCloud<pcl::Normal>::Ptr normals_1(
-//            new pcl::PointCloud<pcl::Normal>);
+// Pre-processing initialization
     pcl::IntegralImageNormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne { };
     ne.setNormalEstimationMethod(ne.COVARIANCE_MATRIX);
     ne.setMaxDepthChangeFactor(0.02f);
@@ -104,8 +102,8 @@ int main(void)
 //            pcl::FPFHSignature33> };
 //    fpfh.setRadiusSearch(0.05f);
 
-    // Visualizer initialization
-    std::vector<int> visualizer_handles(static_cast<int>(num_devices), 0);
+// Visualizer initialization
+    std::vector<int> visualizer_handles(static_cast<int>(num_devices) << 1, 0);
     printf("Visualizer Handle Size %zu\n", visualizer_handles.size());
     std::shared_ptr<pcl::visualization::PCLVisualizer> visualizer {
             new pcl::visualization::PCLVisualizer("Cloud Visualizer") };
@@ -115,32 +113,32 @@ int main(void)
 
     for(size_t i { 0 }; i < num_devices; ++i)
     {
+        int & cloud_visualizer_handle { visualizer_handles.at(i) };
+        int & img_visualizer_handle { visualizer_handles.at(i + num_devices) };
 
-        printf("Visualizer Handle %i\n", (int) i);
-        int & visualizer_handle { visualizer_handles.at(i) };
-
+        visualizer->createViewPort(static_cast<double>(i) / num_devices, 0.5,
+                static_cast<double>(i + 1) / num_devices, 1.0,
+                cloud_visualizer_handle);
         visualizer->createViewPort(static_cast<double>(i) / num_devices, 0.0,
-                static_cast<double>(i + 1) / num_devices,
-                1.0,
-                visualizer_handle);
-        visualizer->setBackgroundColor(0, 0, 0, visualizer_handle);
+                static_cast<double>(i + 1) / num_devices, 0.5,
+                img_visualizer_handle);
+        visualizer->setBackgroundColor(0, 0, 0, cloud_visualizer_handle);
+        visualizer->setBackgroundColor(0, 0, 0, img_visualizer_handle);
 
         std::shared_ptr<PCLCloud<pcl::PointXYZRGB>> pcl_cloud_ptr {
                 pcl_cloud_ptrs.at(i) };
 
         visualizer->addPointCloud(pcl_cloud_ptr->ptr, pcl_cloud_ptr->rgb,
-                pcl_cloud_ptr->name, visualizer_handle);
+                pcl_cloud_ptr->cloud_name, cloud_visualizer_handle);
+        visualizer->addPointCloud(pcl_cloud_ptr->ptr, pcl_cloud_ptr->rgb,
+                pcl_cloud_ptr->img_name, img_visualizer_handle);
         visualizer->setPointCloudRenderingProperties(
                 pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
-                pcl_cloud_ptr->name);
+                pcl_cloud_ptr->cloud_name);
+        visualizer->setPointCloudRenderingProperties(
+                pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+                pcl_cloud_ptr->img_name);
     }
-
-//    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_1(
-//            cloud_1_ptr);
-//
-//    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_2(
-//            cloud_2_ptr);
-
 
     while (keep_running)
     {
@@ -156,7 +154,8 @@ int main(void)
 
             if(device_ptr->started() && pcl_cloud_ptr)
             {
-                device_ptr->read_cloud(pcl_cloud_ptr->ptr);
+                device_ptr->read_cloud(pcl_cloud_ptr->ptr,
+                        pcl_cloud_ptr->rgb_mat, pcl_cloud_ptr->depth_mat);
 
 //                ne.setInputCloud(cloud_1_ptr);
 //                ne.compute(*normals_1);
@@ -194,10 +193,21 @@ int main(void)
                     pcl_cloud_ptrs.at(i) };
 
             if(device_ptr->started() && pcl_cloud_ptr)
+            {
+                pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr {
+                        pcl_cloud_ptr->ptr };
                 visualizer->updatePointCloud<pcl::PointXYZRGB>(
-                        pcl_cloud_ptr->ptr,
-                        pcl_cloud_ptr->rgb,
-                        pcl_cloud_ptr->name);
+                        pcl_cloud_ptr->ptr, pcl_cloud_ptr->rgb,
+                        pcl_cloud_ptr->cloud_name);
+
+                for(auto itr { cloud_ptr->points.begin() };
+                        itr != cloud_ptr->points.end(); ++itr)
+                    itr->z = 0;
+
+                visualizer->updatePointCloud<pcl::PointXYZRGB>(
+                        pcl_cloud_ptr->ptr, pcl_cloud_ptr->rgb,
+                        pcl_cloud_ptr->img_name);
+            }
         }
 
         visualizer->spinOnce();

@@ -25,7 +25,7 @@ namespace device
 {
     enum Kinect2CamType
     {
-        COLOR = 1, DEPTH = 1 << 2
+        COLOR = 1, DEPTH = 1 << 1
     };
 
     class Kinect2Device;
@@ -65,8 +65,9 @@ namespace device
             void read_cloud(
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
                     size_t timeout_sec = 10) const;
-
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr read_cloud(
+            void read_cloud(
+                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
+                    cv::Mat & out_rgb_mat, cv::Mat & out_depth_mat,
                     size_t timeout_sec = 10) const;
 
         private:
@@ -162,7 +163,11 @@ namespace device
             bool is_running { false };
 
             void set_frame_listener(int cam_type);
-            bool read_frame(Kinect2Frame & data, size_t timeout_sec = 10) const;
+            bool read_frame(Kinect2Frame & frame,
+                    size_t timeout_sec = 10) const;
+            void read_cloud(
+                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
+                    Kinect2Frame & frame, size_t timeout_sec) const;
             void frame_to_cloud(const Kinect2Frame & frame,
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr) const;
     };
