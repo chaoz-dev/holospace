@@ -71,36 +71,32 @@ namespace device
                     size_t timeout_sec = 10) const;
 
         private:
-            class Kinect2FrameParam
+            struct Kinect2FrameParam
             {
-                public:
-                    static constexpr size_t FRAME_HEIGHT { 424 };
-                    static constexpr size_t FRAME_WIDTH { 512 };
-                    static constexpr size_t BYTES_PER_PIX { 4 };
-                    static constexpr size_t FRAME_AREA { FRAME_HEIGHT
-                            * FRAME_WIDTH };
+                static constexpr size_t FRAME_HEIGHT { 424 };
+                static constexpr size_t FRAME_WIDTH { 512 };
+                static constexpr size_t BYTES_PER_PIX { 4 };
+                static constexpr size_t FRAME_AREA { FRAME_HEIGHT
+                        * FRAME_WIDTH };
 
-                    float depth_col_map[FRAME_WIDTH] { };
-                    float depth_row_map[FRAME_HEIGHT] { };
+                float depth_col_map[FRAME_WIDTH] { };
+                float depth_row_map[FRAME_HEIGHT] { };
 
-                    Kinect2FrameParam(
-                            const libfreenect2::Freenect2Device::IrCameraParams & ir_cam_params)
+                Kinect2FrameParam(
+                        const libfreenect2::Freenect2Device::IrCameraParams & ir_cam_params)
+                {
+                    for(size_t i { 0 }; i < FRAME_WIDTH; ++i)
                     {
-                        for(size_t i { 0 }; i < FRAME_WIDTH; ++i)
-                        {
-                            depth_col_map[i] = (i - ir_cam_params.cx + 0.5)
-                                    / ir_cam_params.fx;
-                        }
-
-                        for(size_t j { 0 }; j < FRAME_HEIGHT; ++j)
-                        {
-                            depth_row_map[j] = (j - ir_cam_params.cy + 0.5)
-                                    / ir_cam_params.fy;
-                        }
+                        depth_col_map[i] = (i - ir_cam_params.cx + 0.5)
+                                / ir_cam_params.fx;
                     }
 
-                    ~Kinect2FrameParam()
-                    {}
+                    for(size_t j { 0 }; j < FRAME_HEIGHT; ++j)
+                    {
+                        depth_row_map[j] = (j - ir_cam_params.cy + 0.5)
+                                / ir_cam_params.fy;
+                    }
+                }
             };
 
             class Kinect2Frame

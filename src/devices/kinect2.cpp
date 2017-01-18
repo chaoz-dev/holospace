@@ -65,7 +65,7 @@ namespace device
         {
             device_ptr = std::unique_ptr<libfreenect2::Freenect2Device> {
                     freenect2_ptr->openDevice(serial_num,
-                            new libfreenect2::OpenCLPacketPipeline()) };
+                            new libfreenect2::CudaPacketPipeline()) };
 
             std::chrono::high_resolution_clock::time_point end {
                     std::chrono::high_resolution_clock::now() };

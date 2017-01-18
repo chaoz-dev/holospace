@@ -5,13 +5,15 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 
-find_package(OpenCL REQUIRED)
+find_package(Boost COMPONENTS program_options REQUIRED)
 find_package(freenect2 REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(PCL 1.8 REQUIRED COMPONENTS io common visualization filters
-    features)
+find_package(PCL 1.8 COMPONENTS io common visualization filters
+    features REQUIRED)
 find_package(VTK REQUIRED)
 
 set(GCC_COMPILE_FLAGS
@@ -50,14 +52,11 @@ set(CMAKE_INSTALL_PREFIX
     "${CMAKE_HOME_DIRECTORY}/bin")
 
 include_directories(
-    "/usr/include"
-    "/usr/local/include"
+    "${Boost_INCLUDE_DIRS}"
     "${PCL_INCLUDE_DIRS}"
     "${CMAKE_HOME_DIRECTORY}/include")
 
 link_directories(
-    "/usr/lib"
-    "/usr/local/lib")
-
+    "${Boost_LIBRARY_DIRS}")
 
 add_subdirectory(src)

@@ -8,9 +8,12 @@
 #include <chrono>
 #include <cstdio>
 #include <csignal>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <boost/program_options.hpp>
 
 #include <pcl-1.8/pcl/filters/filter.h>
 #include <pcl-1.8/pcl/features/integral_image_normal.h>
@@ -29,25 +32,64 @@ static void sigint_handler(int s)
 template<typename PointT>
 struct PCLCloud
 {
-    public:
-        typename pcl::PointCloud<PointT>::Ptr ptr {
-                new pcl::PointCloud<PointT>() };
-        typename pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb {
-                ptr };
-        pcl::PointCloud<pcl::Normal>::Ptr normals_ptr { new pcl::PointCloud<
-                pcl::Normal> };
+    typename pcl::PointCloud<PointT>::Ptr ptr { new pcl::PointCloud<PointT>() };
+    typename pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb { ptr };
+    pcl::PointCloud<pcl::Normal>::Ptr normals_ptr { new pcl::PointCloud< pcl::Normal> };
 
-        cv::Mat rgb_mat { };
-        cv::Mat depth_mat { };
+    cv::Mat rgb_mat { };
+    cv::Mat depth_mat { };
 
-        std::string cloud_name { "PCL Cloud" };
-        std::string img_name { "PCL Image" };
+    std::string cloud_name { "PCL Cloud" };
+    std::string img_name { "PCL Image" };
 
 };
 
-int main(void)
+struct ProgramOptions
+{
+    bool exit { false };
+
+    std::string calibration_image { "calibration_img.png" };
+
+};
+
+ProgramOptions read_args(int argc, char ** argv)
+{
+    boost::program_options::options_description desc { "Usage: Qmulus [options...]\n"
+                "Options:" };
+    desc.add_options()
+            ("help", "Shows this help message")
+            ("calibration-image", boost::program_options::value<std::string>(),
+                    "Calibration image file used to calibrate cameras for registration")
+    ;
+
+    boost::program_options::variables_map variables_map { };
+    boost::program_options::store(
+            boost::program_options::parse_command_line(argc, argv, desc),
+            variables_map);
+    boost::program_options::notify(variables_map);
+
+    ProgramOptions program_options { };
+
+    if (variables_map.count("help"))
+    {
+        std::cout << desc << std::endl;
+        program_options.exit = true;
+    }
+
+    if (variables_map.count("calibration-image"))
+        program_options.calibration_image =
+                variables_map["calibration-image"].as<std::string>();
+
+    return program_options;
+}
+
+int main(int argc, char ** argv)
 {
     signal(SIGINT, sigint_handler);
+    ProgramOptions program_options { read_args(argc, argv) };
+
+    if (program_options.exit)
+        return 1;
 
     // Kinect2DeviceFactory initialization
     device::Kinect2DeviceFactory k2_factory { };
