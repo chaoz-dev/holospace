@@ -54,7 +54,7 @@ struct ProgramOptions
 
 ProgramOptions read_args(int argc, char ** argv)
 {
-    boost::program_options::options_description desc { "Usage: Qmulus [options...]\n"
+    boost::program_options::options_description desc { "Usage: holospace [options...]\n"
                 "Options:" };
     desc.add_options()
             ("help", "Shows this help message")

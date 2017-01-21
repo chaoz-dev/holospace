@@ -2,7 +2,7 @@ FROM ubuntu:xenial
 MAINTAINER Chao Zhang
 
 ARG USER=docker
-ARG PROJECT_NAME=Qmulus
+ARG PROJECT_NAME=holospace
 ARG PROJECT_DIR=/opt/$PROJECT_NAME
 ARG TMP_DIR=/tmp
 
