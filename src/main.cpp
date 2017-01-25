@@ -9,12 +9,14 @@
 #include <cstdio>
 #include <csignal>
 #include <iostream>
+//#include <math.h>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include <boost/program_options.hpp>
 
+//#include <pcl-1.8/pcl/common/transforms.h>
 #include <pcl-1.8/pcl/filters/filter.h>
 #include <pcl-1.8/pcl/features/integral_image_normal.h>
 #include <pcl-1.8/pcl/features/fpfh_omp.h>
@@ -133,6 +135,10 @@ int main(int argc, char ** argv) {
 //            pcl::FPFHSignature33> };
 //    fpfh.setRadiusSearch(0.05f);
 
+// Transformation initializations
+//	Eigen::Affine3f rotation_mat { Eigen::Affine3f::Identity() };
+//	rotation_mat.rotate(Eigen::AngleAxisf(M_PI_2, Eigen::Vector3f::UnitZ()));
+
 // Visualizer initialization
 	std::vector<int> visualizer_handles(static_cast<int>(num_devices) << 1, 0);
 	printf("Visualizer Handle Size %zu\n", visualizer_handles.size());
@@ -170,6 +176,7 @@ int main(int argc, char ** argv) {
 				pcl_cloud_ptr->img_name);
 	}
 
+	cv::namedWindow("OpenCV Window", cv::WINDOW_AUTOSIZE);
 	while (keep_running) {
 		std::chrono::high_resolution_clock::time_point start {
 				std::chrono::high_resolution_clock::now() };
@@ -184,9 +191,14 @@ int main(int argc, char ** argv) {
 				device_ptr->read_cloud(pcl_cloud_ptr->ptr,
 						pcl_cloud_ptr->rgb_mat, pcl_cloud_ptr->depth_mat);
 
+				cv::imshow("OpenCV Window", pcl_cloud_ptr->rgb_mat);
+//				pcl::transformPointCloud(*(pcl_cloud_ptr->ptr),
+//						*(pcl_cloud_ptr->ptr), rotation_mat);
 //                ne.setInputCloud(cloud_1_ptr);
 //                ne.compute(*normals_1);
 			}
+
+
 		}
 
 		// TODO: Figure out how to extract points via indices. Maybe applicable to the voxel filter, which would be very handy.

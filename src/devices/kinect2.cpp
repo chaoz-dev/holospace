@@ -170,6 +170,11 @@ bool Kinect2Device::read_frame(Kinect2Frame & frame, size_t timeout_sec) const {
 	registration_ptr->apply(frame.get_rgb_frames(), frame.get_depth_frames(),
 			&frame.undistorted_frame, &frame.registered_frame);
 
+	cv::transpose(frame.rgb_mat, frame.rgb_mat);
+	cv::flip(frame.rgb_mat, frame.rgb_mat, 0);
+	cv::transpose(frame.depth_mat, frame.depth_mat);
+	cv::flip(frame.depth_mat, frame.depth_mat, 0);
+
 	return true;
 }
 
@@ -215,22 +220,25 @@ void Kinect2Device::frame_to_cloud(const Kinect2Frame & frame,
 
 	cloud_ptr->is_dense = false;
 
-	for (std::size_t y { 0 }; y < cloud_ptr->height; ++y) {
-		std::size_t row { y * cloud_ptr->width };
+	size_t height { cloud_ptr->width };
+	size_t width { cloud_ptr->height };
+
+	for (std::size_t y { 0 }; y < height; ++y) {
+		std::size_t row { y * width };
 
 		const float * depth_ptr {
 				reinterpret_cast<const float *>(frame.depth_mat.ptr()) + row };
 		const char * rgb_ptr {
 				reinterpret_cast<const char *>(frame.rgb_mat.ptr()) + (row << 2) };
 
-		for (std::size_t x { 0 }; x < cloud_ptr->width; ++x) {
+		for (std::size_t x { 0 }; x < width; ++x) {
 			pcl::PointXYZRGB * pt_ptr { &cloud_ptr->points.at(row + x) };
 
 			float depth_value { *(depth_ptr + x) / 1000.0f };
 
 			if (!std::isnan(depth_value) && !(std::abs(depth_value) < 0.0001)) {
-				pt_ptr->x = frame_params_ptr->depth_col_map[x] * depth_value;
-				pt_ptr->y = frame_params_ptr->depth_row_map[y] * depth_value;
+				pt_ptr->x = frame_params_ptr->depth_row_map[x] * depth_value;
+				pt_ptr->y = frame_params_ptr->depth_col_map[y] * -depth_value;
 				pt_ptr->z = depth_value;
 
 				const char * rgb { rgb_ptr + (x << 2) };
