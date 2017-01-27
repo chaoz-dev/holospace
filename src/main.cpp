@@ -22,7 +22,7 @@
 #include <pcl-1.8/pcl/features/fpfh_omp.h>
 #include <pcl-1.8/pcl/visualization/pcl_visualizer.h>
 
-#include "kinect2.h"
+#include "kinect2.hpp"
 
 static bool keep_running = true;
 static void sigint_handler(int s) {

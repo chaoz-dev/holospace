@@ -5,7 +5,7 @@
  *      Author: chao
  */
 
-#include "kinect2.h"
+#include "kinect2.hpp"
 
 #include <chrono>
 #include <stdexcept>

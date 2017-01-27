@@ -1,12 +1,12 @@
 /*
- * kinect2.h
+ * kinect2.hpp
  *
  *  Created on: Nov 27, 2016
  *      Author: chao
  */
 
-#ifndef KINECT2_H
-#define KINECT2_H
+#ifndef KINECT2_HPP
+#define KINECT2_HPP
 
 #include <exception>
 #include <memory>
@@ -153,4 +153,4 @@ public:
 
 } /* namespace device */
 
-#endif /* KINECT2_H */
+#endif /* KINECT2_HPP */
