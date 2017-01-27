@@ -170,10 +170,12 @@ bool Kinect2Device::read_frame(Kinect2Frame & frame, size_t timeout_sec) const {
 	registration_ptr->apply(frame.get_rgb_frames(), frame.get_depth_frames(),
 			&frame.undistorted_frame, &frame.registered_frame);
 
+#ifdef ROTATE_DEVICE_COUNTERCLOCKWISE
 	cv::transpose(frame.rgb_mat, frame.rgb_mat);
 	cv::flip(frame.rgb_mat, frame.rgb_mat, 0);
 	cv::transpose(frame.depth_mat, frame.depth_mat);
 	cv::flip(frame.depth_mat, frame.depth_mat, 0);
+#endif
 
 	return true;
 }
@@ -181,6 +183,19 @@ bool Kinect2Device::read_frame(Kinect2Frame & frame, size_t timeout_sec) const {
 void Kinect2Device::read_cloud(
 		pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud_ptr,
 		Kinect2Frame & frame, size_t timeout_sec) const {
+
+#ifdef ROTATE_DEVICE_COUNTERCLOCKWISE
+	if (!out_cloud_ptr)
+		out_cloud_ptr =
+				pcl::PointCloud<pcl::PointXYZRGB>(
+						Kinect2FrameParam::FRAME_HEIGHT,
+						Kinect2FrameParam::FRAME_WIDTH).makeShared();
+	else {
+		out_cloud_ptr->resize(Kinect2FrameParam::FRAME_AREA);
+		out_cloud_ptr->width = Kinect2FrameParam::FRAME_HEIGHT;
+		out_cloud_ptr->height = Kinect2FrameParam::FRAME_WIDTH;
+	}
+#else
 	if (!out_cloud_ptr)
 		out_cloud_ptr =
 				pcl::PointCloud<pcl::PointXYZRGB>(
@@ -191,6 +206,7 @@ void Kinect2Device::read_cloud(
 		out_cloud_ptr->width = Kinect2FrameParam::FRAME_WIDTH;
 		out_cloud_ptr->height = Kinect2FrameParam::FRAME_HEIGHT;
 	}
+#endif
 
 	if (read_frame(frame, timeout_sec))
 		frame_to_cloud(frame, out_cloud_ptr);
@@ -220,25 +236,35 @@ void Kinect2Device::frame_to_cloud(const Kinect2Frame & frame,
 
 	cloud_ptr->is_dense = false;
 
-	size_t height { cloud_ptr->width };
-	size_t width { cloud_ptr->height };
+#ifdef ROTATE_DEVICE_COUNTERCLOCKWISE
+	constexpr size_t max_cols { Kinect2FrameParam::FRAME_WIDTH };
+	constexpr size_t max_rows { Kinect2FrameParam::FRAME_HEIGHT };
+#else
+	constexpr size_t max_cols {Kinect2FrameParam::FRAME_HEIGHT};
+	constexpr size_t max_rows {Kinect2FrameParam::FRAME_WIDTH};
+#endif
 
-	for (std::size_t y { 0 }; y < height; ++y) {
-		std::size_t row { y * width };
+	for (std::size_t y { 0 }; y < max_cols; ++y) {
+		const std::size_t row { y * max_rows };
 
 		const float * depth_ptr {
 				reinterpret_cast<const float *>(frame.depth_mat.ptr()) + row };
 		const char * rgb_ptr {
 				reinterpret_cast<const char *>(frame.rgb_mat.ptr()) + (row << 2) };
 
-		for (std::size_t x { 0 }; x < width; ++x) {
+		for (std::size_t x { 0 }; x < max_rows; ++x) {
 			pcl::PointXYZRGB * pt_ptr { &cloud_ptr->points.at(row + x) };
 
-			float depth_value { *(depth_ptr + x) / 1000.0f };
+			const float depth_value { *(depth_ptr + x) / 1000.0f };
 
 			if (!std::isnan(depth_value) && !(std::abs(depth_value) < 0.0001)) {
+#ifdef ROTATE_DEVICE_COUNTERCLOCKWISE
 				pt_ptr->x = frame_params_ptr->depth_row_map[x] * depth_value;
 				pt_ptr->y = frame_params_ptr->depth_col_map[y] * -depth_value;
+#else
+				pt_ptr->x = frame_params_ptr->depth_col_map[x] * depth_value;
+				pt_ptr->y = frame_params_ptr->depth_row_map[y] * depth_value;
+#endif
 				pt_ptr->z = depth_value;
 
 				const char * rgb { rgb_ptr + (x << 2) };

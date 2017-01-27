@@ -16,6 +16,8 @@ find_package(PCL 1.8 COMPONENTS io common visualization filters
     features REQUIRED)
 find_package(VTK REQUIRED)
 
+add_definitions(-DROTATE_DEVICE_COUNTERCLOCKWISE)
+
 set(GCC_COMPILE_FLAGS
     "-Wall                  \
     -Wextra                 \
