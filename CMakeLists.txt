@@ -21,7 +21,6 @@ add_definitions(-DROTATE_DEVICE_COUNTERCLOCKWISE)
 set(GCC_COMPILE_FLAGS
     "-Wall                  \
     -Wextra                 \
-    -Werror                 \
     -Wno-long-long          \
     -Wno-variadic-macros    \
     -fexceptions            \
