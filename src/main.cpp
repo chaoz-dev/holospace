@@ -32,9 +32,10 @@ static void sigint_handler(int s) {
 
 template<typename PointT>
 struct PCLCloud {
-	typename pcl::PointCloud<PointT>::Ptr ptr { new pcl::PointCloud<PointT>() };
+	typename pcl::PointCloud<PointT>::Ptr cloud_ptr {
+			new pcl::PointCloud<PointT>() };
 	typename pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb {
-			ptr };
+			cloud_ptr };
 	pcl::PointCloud<pcl::Normal>::Ptr normals_ptr { new pcl::PointCloud<
 			pcl::Normal> };
 
@@ -87,6 +88,9 @@ int main(int argc, char ** argv) {
 
 	if (program_options.exit)
 		return 1;
+
+	cv::Mat calibration_img { cv::imread(program_options.calibration_image,
+			CV_LOAD_IMAGE_COLOR) };
 
 	// Kinect2DeviceFactory initialization
 	device::Kinect2DeviceFactory k2_factory { };
@@ -164,9 +168,9 @@ int main(int argc, char ** argv) {
 		std::shared_ptr<PCLCloud<pcl::PointXYZRGB>> pcl_cloud_ptr {
 				pcl_cloud_ptrs.at(i) };
 
-		visualizer->addPointCloud(pcl_cloud_ptr->ptr, pcl_cloud_ptr->rgb,
+		visualizer->addPointCloud(pcl_cloud_ptr->cloud_ptr, pcl_cloud_ptr->rgb,
 				pcl_cloud_ptr->cloud_name, cloud_visualizer_handle);
-		visualizer->addPointCloud(pcl_cloud_ptr->ptr, pcl_cloud_ptr->rgb,
+		visualizer->addPointCloud(pcl_cloud_ptr->cloud_ptr, pcl_cloud_ptr->rgb,
 				pcl_cloud_ptr->img_name, img_visualizer_handle);
 		visualizer->setPointCloudRenderingProperties(
 				pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
@@ -188,16 +192,16 @@ int main(int argc, char ** argv) {
 					pcl_cloud_ptrs.at(i) };
 
 			if (device_ptr->started() && pcl_cloud_ptr) {
-				device_ptr->read_cloud(pcl_cloud_ptr->ptr,
+				device_ptr->read_cloud(pcl_cloud_ptr->cloud_ptr,
 						pcl_cloud_ptr->rgb_mat, pcl_cloud_ptr->depth_mat);
 
-				cv::imshow("OpenCV Window", pcl_cloud_ptr->rgb_mat);
+//				cv::imshow("OpenCV Window", pcl_cloud_ptr->rgb_mat);
+//				cv::waitKey(20);
 //				pcl::transformPointCloud(*(pcl_cloud_ptr->ptr),
 //						*(pcl_cloud_ptr->ptr), rotation_mat);
-//                ne.setInputCloud(cloud_1_ptr);
-//                ne.compute(*normals_1);
+				ne.setInputCloud(pcl_cloud_ptr->cloud_ptr);
+				ne.compute(*(pcl_cloud_ptrs.at(i)->normals_ptr));
 			}
-
 
 		}
 
@@ -232,9 +236,9 @@ int main(int argc, char ** argv) {
 
 			if (device_ptr->started() && pcl_cloud_ptr) {
 				pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr {
-						pcl_cloud_ptr->ptr };
+						pcl_cloud_ptr->cloud_ptr };
 				visualizer->updatePointCloud<pcl::PointXYZRGB>(
-						pcl_cloud_ptr->ptr, pcl_cloud_ptr->rgb,
+						pcl_cloud_ptr->cloud_ptr, pcl_cloud_ptr->rgb,
 						pcl_cloud_ptr->cloud_name);
 
 				for (auto itr { cloud_ptr->points.begin() };
@@ -242,7 +246,7 @@ int main(int argc, char ** argv) {
 					itr->z = 0;
 
 				visualizer->updatePointCloud<pcl::PointXYZRGB>(
-						pcl_cloud_ptr->ptr, pcl_cloud_ptr->rgb,
+						pcl_cloud_ptr->cloud_ptr, pcl_cloud_ptr->rgb,
 						pcl_cloud_ptr->img_name);
 			}
 		}
